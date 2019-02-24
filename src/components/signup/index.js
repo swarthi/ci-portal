@@ -15,6 +15,11 @@ import FormControlLabel from '@material-ui/core/FormControlLabel';
 import Checkbox from '@material-ui/core/Checkbox';
 import Button from '@material-ui/core/Button';
 import withStyles from '@material-ui/core/styles/withStyles';
+// import { ValidatorForm, TextValidator} from 'react-material-ui-form-validator';
+// import { withFormsy } from 'formsy-react';
+import Formsy from 'formsy-react';
+import SyInput from '../SyInput';
+import SySelect from '../SySelect';
 
 const styles = theme => ({
     main: {
@@ -47,7 +52,6 @@ const styles = theme => ({
         marginTop: theme.spacing.unit * 3,
     },
 });
-
 
 const languages = [
     'JavaScript/Node',
@@ -85,23 +89,73 @@ class Signup extends Component {
     constructor() {
         // console.log('arguments', arguments);
         super();
+        this.disableButton = this.disableButton.bind(this);
+        this.enableButton = this.enableButton.bind(this);
         this.state = {
+            email: '',
+            firstName: '',
+            lastName: '',
+            alias: '',
+            pin: '',
+            confPin: '',
             lang: [],
             host: [],
-            iface: []
+            iface: [],
+            canSubmit: false
         };
+    }
+
+    disableButton() {
+        this.setState({ canSubmit: false });
+    }
+    
+    enableButton() {
+        this.setState({ canSubmit: true });
     }
 
     handleChangeLanguage = event => {
         this.setState({ lang: event.target.value });
     };
 
-    handleChangeHosting = event => {
-        this.setState({ host: event.target.value });
-    };
-
     handleChangeInterface = event => {
         this.setState({ iface: event.target.value });
+    };
+
+    handleSignup = (model) => {
+        // event.preventDefault();
+        // debugger;
+        // console.log(model);
+
+        (async () => {
+            const rawResponse = await fetch('http://localhost:9000/test', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(model)
+            });
+            const content = await rawResponse;
+            // console.log('========',content,content.json());
+            if ( content.status === 200 ) {
+                this.setState({
+                    email: '',
+                    firstName: '',
+                    lastName: '',
+                    alias: '',
+                    pin: '',
+                    confPin: '',
+                    lang: [],
+                    host: [],
+                    iface: [],
+                    canSubmit: false
+                });
+                alert('User Saved.');
+            }
+
+            // console.log(content);
+        })();
+
     };
 
     render() {
@@ -112,83 +166,123 @@ class Signup extends Component {
                 <Paper className={classes.paper}>
                     <Avatar><LockIcon /></Avatar>
                     <Typography variant="h5">Sign Up</Typography>
-                    <form>
+                    <Formsy
+                        onValidSubmit={this.handleSignup}
+                        onValid={this.enableButton}
+                        onInvalid={this.disableButton}
+                    >
                         <FormControl margin="dense" fullWidth>
                             <InputLabel htmlFor="email">Email</InputLabel>
-                            <Input id="email" name="email" type="email" />
+                            <SyInput 
+                                id="email"
+                                name="email"
+                                required
+                                validations='isEmail'
+                                validationError="This is not a valid email"
+                            />
                         </FormControl>
                         <FormControl margin="dense" fullWidth>
                             <InputLabel htmlFor="firstName">First Name</InputLabel>
-                            <Input id="firstName" name="firstName" />
+                            <SyInput
+                                id="firstName"
+                                name="firstName"
+                                value=""
+                                required
+                                validations="minLength:3"
+                                validationError="First name should be 3 char long."
+                            />
                         </FormControl>
                         <FormControl margin="dense" fullWidth>
                             <InputLabel htmlFor="lastName">Last Name</InputLabel>
-                            <Input id="lastName" name="lastName" />
+                            <SyInput
+                                id="lastName"
+                                name="lastName"
+                                required
+                                validations="minLength:3"
+                                validationError="Last name should be 3 char long."
+                            />
                         </FormControl>
                         <FormControl margin="dense" fullWidth>
                             <InputLabel htmlFor="alias">Alias</InputLabel>
-                            <Input id="alias" name="alias" />
+                            <SyInput
+                                id="alias"
+                                name="alias"
+                                required
+                                validations="minLength:3"
+                                validationError="Alias should be 3 char long."
+                            />
                         </FormControl>
                         <FormControl margin="dense" fullWidth>
                             <InputLabel htmlFor="pin">PIN</InputLabel>
-                            <Input id="pin" name="pin" type="password" />
+                            <SyInput
+                                id="pin"
+                                name="pin"
+                                type="password"
+                                required
+                                validations="minLength:6"
+                                validationError="Password should be 6 char long"
+                            />
+                        </FormControl>
+                        <FormControl margin="dense" fullWidth>
+                            <InputLabel htmlFor="confPin">Confirm PIN</InputLabel>
+                            <SyInput
+                                id="confPin"
+                                name="confPin"
+                                type="password"
+                                validations="equalsField:pin"
+                                validationError="PIN did not match."
+                            />
                         </FormControl>
                         <FormControl margin="dense" fullWidth>
                             <InputLabel htmlFor="favLang">Favorite Programming Language</InputLabel>
-                            <Select
-                                id="favLang" name="favLang"
+                            <SySelect
+                                id="favLang"
+                                name="favLang"
                                 multiple
                                 value={this.state.lang}
-                                onChange={this.handleChangeLanguage}
-                                input={<Input id="select-multiple-checkbox" />}
-                                renderValue={selected => selected.join(', ')}
+                                // onChange={this.handleChangeLanguage}
+                                // input={<Input id="select-multiple-checkbox-lang" />}
+                                // renderValue={selected => selected.join(', ')}
                                 // MenuProps={MenuProps}
+                                options={languages}
+                                required
                             >
-                                {languages.map(name => (
-                                <MenuItem key={name} value={name}>
-                                    <Checkbox checked={this.state.lang.indexOf(name) > -1} />
-                                    <ListItemText primary={name} />
-                                </MenuItem>
-                                ))}
-                            </Select>
+                            </SySelect>
                         </FormControl>
                         <FormControl margin="dense" fullWidth>
                             <InputLabel htmlFor="favHost">Favorite Hosting Plateform</InputLabel>
-                            <Select
+                            <SySelect
                                 id="favHost" name="favHost"
                                 multiple
                                 value={this.state.host}
-                                onChange={this.handleChangeHosting}
-                                input={<Input id="select-multiple-checkbox" />}
-                                renderValue={selected => selected.join(', ')}
                                 // MenuProps={MenuProps}
+                                options={hosting}
+                                required
+                                // validations="minLength:1"
+                                // validationError="Select one value at least."
                             >
-                                {hosting.map(name => (
-                                <MenuItem key={name} value={name}>
-                                    <Checkbox checked={this.state.host.indexOf(name) > -1} />
-                                    <ListItemText primary={name} />
-                                </MenuItem>
-                                ))}
-                            </Select>
+                            </SySelect>
                         </FormControl>
                         <FormControl margin="dense" fullWidth>
                             <InputLabel htmlFor="favInterface">Favorite Interface Format</InputLabel>
-                            <Select
+                            <SySelect
                                 id="favInterface" name="favInterface"
                                 multiple
                                 value={this.state.iface}
-                                onChange={this.handleChangeInterface}
-                                input={<Input id="select-multiple-checkbox" />}
-                                renderValue={selected => selected.join(', ')}
+                                // onChange={this.handleChangeInterface}
+                                // input={<Input id="select-multiple-checkbox-iface" />}
+                                // renderValue={selected => selected.join(', ')}
                                 // MenuProps={MenuProps}
+                                options={_interface}
+                                required
                             >
-                                {_interface.map(name => (
+                                {/* {_interface.map(name => (
                                 <MenuItem key={name} value={name}>
                                     <Checkbox checked={this.state.iface.indexOf(name) > -1} />
                                     <ListItemText primary={name} />
-                                </MenuItem>
+                                </MenuItem> */}
                                 ))}
-                            </Select>
+                            </SySelect>
                         </FormControl>
                         <FormControlLabel
                             control={<Checkbox value="accept" color="primary" />}
@@ -200,10 +294,11 @@ class Signup extends Component {
                             variant="contained"
                             color="primary"
                             className={classes.submit}
+                            disabled={!this.state.canSubmit}
                         >
                             Sign up
                         </Button>
-                    </form>
+                    </Formsy>
                 </Paper>
             </main>
         );
